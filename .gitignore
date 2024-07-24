@@ -1,0 +1,7 @@
+.vs/
+Debug/
+out/
+*.sln
+Snake_Game/Debug/
+Snake_Game/*.vcxproj*
+3rd_Party/cpp-terminal/.git*
