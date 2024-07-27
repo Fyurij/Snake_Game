@@ -37,6 +37,11 @@ struct Koordinates
     int y;
 };
 
+bool operator==(const Koordinates& lhs, const Koordinates& rhs)
+{
+    return (lhs.x == rhs.x && lhs.y == rhs.y);
+}
+
 
 
 class Snake
@@ -58,40 +63,80 @@ public:
         ++length;
     }
 
-    Moving MoveUp()
+    bool EatingFood(int foodPosX, int foodPosY)
     {
-        if (move != Moving::Down)
+        if (body[0].x == foodPosX && body[0].y == foodPosY)
         {
-            move = Moving::Up;
+            return true;
         }
-        return move;
+        return false;
     }
 
-    Moving MoveDown()
+    void MoveUp(int foodPosX, int foodPosY)
     {
-        if (move != Moving::Up)
+        body.push_front({ body[0].x, body[0].y - 1 });
+        if (!EatingFood(foodPosX, foodPosY))
         {
-            move = Moving::Down;
+            body.pop_back();
         }
-        return move;
     }
 
-    Moving MoveLeft()
+    void MoveDown(int foodPosX, int foodPosY)
     {
-        if (move != Moving::Right)
+        body.push_front({ body[0].x, body[0].y + 1 });
+        if (!EatingFood(foodPosX, foodPosY))
         {
-            move = Moving::Left;
+            body.pop_back();
         }
-        return move;
     }
 
-    Moving MoveRight()
+    void MoveLeft(int foodPosX, int foodPosY)
     {
-        if (move != Moving::Left)
+        body.push_front({ body[0].x - 1, body[0].y});
+        if (!EatingFood(foodPosX, foodPosY))
         {
-            move = Moving::Right;
+            body.pop_back();
         }
-        return move;
+    }
+
+    void MoveRight(int foodPosX, int foodPosY)
+    {
+        body.push_front({ body[0].x + 1, body[0].y});
+        if (!EatingFood(foodPosX, foodPosY))
+        {
+            body.pop_back();
+        }
+    }
+
+    Koordinates GetHead()
+    {
+        return body[0];
+    }
+
+    void Restart()
+    {
+        body.clear();
+        body.push_front({1,1});
+    }
+
+    bool IsSnakeBody(const Koordinates& square)
+    {
+        for (std::deque<Koordinates>::iterator i = body.begin(); i != body.end(); ++i)
+        {
+            if (*i == square)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    void FillField(std::vector<std::vector<FieldStatus>>& field)
+    {
+        for (int i = 0; i < body.size(); ++i)
+        {
+            field[body[i].y][body[i].x] = FieldStatus::Snake;
+        }
     }
 };
 
@@ -100,22 +145,21 @@ public:
 class Field
 {
 private:
-    std::vector<std::vector<FieldStatus>> field;
+    //std::vector<std::vector<FieldStatus>> field;
     int width;
     int height;
-    int SnakePosX;
-    int SnakePosY;
-    int FoodPosX;
-    int FoodPosY;
+    Koordinates head;
+    Snake snake;
+    Koordinates food;
 public:
     Field(int width_, int height_)
-        :field(height_, std::vector<FieldStatus>(width_, FieldStatus::Empty))
-        ,width(width_)
+        //:field(height_, std::vector<FieldStatus>(width_, FieldStatus::Empty))
+        :width(width_)
         ,height(height_)
-        ,SnakePosX(1)
-        ,SnakePosY(1)
+        ,head({1,1})
+        , food({1,1})
     {
-        field[SnakePosY][SnakePosX] = FieldStatus::Snake;
+        //field[SnakePosY][SnakePosX] = FieldStatus::Snake;
     }
 
     void GameOver(int& quit)
@@ -125,123 +169,121 @@ public:
         ++quit;
     }
 
-    void MoveUp(int& quit, Snake& snake)
-    {
-        int temp = SnakePosY - 1;
-        if (temp > -1)
-        {
-            field[SnakePosY][SnakePosX] = FieldStatus::Empty;
-            SnakePosY = temp;
-            if (field[SnakePosY][SnakePosX] == FieldStatus::Food)
-            {
-                snake.IncreasingLength({SnakePosY, SnakePosX});
-            }
-            field[SnakePosY][SnakePosX] = FieldStatus::Snake;
-        }
-        else
-        {
-            GameOver(quit);
-        }
-    }
-
-    void MoveRight(int& quit, Snake& snake)
-    {
-        int temp = SnakePosX + 1;
-        if (temp < width)
-        {
-            field[SnakePosY][SnakePosX] = FieldStatus::Empty;
-            SnakePosX = temp;
-            if (field[SnakePosY][SnakePosX] == FieldStatus::Food)
-            {
-                snake.IncreasingLength({ SnakePosY, SnakePosX });
-            }
-            field[SnakePosY][SnakePosX] = FieldStatus::Snake;
-        }
-        else
-        {
-            GameOver(quit);
-        }
-    }
-
-    void MoveDown(int& quit, Snake& snake)
-    {
-        int temp = SnakePosY + 1;
-        if (temp < height)
-        {
-            field[SnakePosY][SnakePosX] = FieldStatus::Empty;
-            SnakePosY = temp;
-            if (field[SnakePosY][SnakePosX] == FieldStatus::Food)
-            {
-                snake.IncreasingLength({ SnakePosY, SnakePosX });
-            }
-            field[SnakePosY][SnakePosX] = FieldStatus::Snake;
-        }
-        else
-        {
-            GameOver(quit);
-        }
-    }
-
-    void MoveLeft(int& quit, Snake& snake)
-    {
-        int temp = SnakePosX - 1;
-        if (temp > -1)
-        {
-            field[SnakePosY][SnakePosX] = FieldStatus::Empty;
-            SnakePosX = temp;
-            if (field[SnakePosY][SnakePosX] == FieldStatus::Food)
-            {
-                snake.IncreasingLength({ SnakePosY, SnakePosX });
-            }
-            field[SnakePosY][SnakePosX] = FieldStatus::Snake;
-        }
-        else
-        {
-            GameOver(quit);
-        }
-    }
-
     void GenerateFood()
     {
         std::random_device rd;
         std::mt19937 gen(rd());
-        std::uniform_int_distribution<> distribWidth(1, width - 1); 
+        std::uniform_int_distribution<> distribWidth(1, width - 1);
         std::uniform_int_distribution<> distribHeight(1, height - 1);
-        FoodPosX = distribWidth(gen);
-        FoodPosY = distribHeight(gen);
-        if (field[FoodPosY][FoodPosX] != FieldStatus::Snake)
+        while (snake.IsSnakeBody({ food.x, food.y }))
         {
-            field[FoodPosY][FoodPosX] = FieldStatus::Food;
+            food.x = distribWidth(gen);
+            food.y = distribHeight(gen);
+        }
+    }
+
+    void MoveUp(int& quit)
+    {
+        //int temp = head.y - 1;
+        --head.y;
+        if (head.y > -1 && !snake.IsSnakeBody(head))
+        {
+            snake.MoveUp(food.x, food.y);
+            //snake.MoveUp(food.x, food.y);
+            //Koordinates head = snake.GetHead();
+            if (snake.EatingFood(food.x, food.y))
+            {
+                GenerateFood();
+            }
         }
         else
         {
-            while (field[FoodPosY][FoodPosX] == FieldStatus::Snake)
+            ++head.y;
+            GameOver(quit);
+        }
+    }
+
+    void MoveRight(int& quit)
+    {
+        //int temp = head.x + 1;
+        ++head.x;
+        if (head.x < width && !snake.IsSnakeBody(head))
+        {
+            snake.MoveRight(food.x, food.y);
+            //snake.MoveRight(food.x, food.y);
+            //Koordinates head = snake.GetHead();
+            if (snake.EatingFood(food.x, food.y))
             {
-                int FoodPosX = distribWidth(gen);
-                int FoodPosY = distribHeight(gen);
+                GenerateFood();
             }
-            field[FoodPosY][FoodPosX] = FieldStatus::Food;
+        }
+        else
+        {
+            --head.x;
+            GameOver(quit);
+        }
+    }
+
+    void MoveDown(int& quit)
+    {
+        //int temp = head.y + 1;
+        ++head.y;
+        if (head.y < height && !snake.IsSnakeBody(head))
+        {
+            snake.MoveDown(food.x, food.y);
+            //snake.MoveDown(food.x, food.y);
+            //Koordinates head = snake.GetHead();
+            if (snake.EatingFood(food.x, food.y))
+            {
+                GenerateFood();
+            }
+        }
+        else
+        {
+            --head.y;
+            GameOver(quit);
+        }
+    }
+
+    void MoveLeft(int& quit)
+    {
+        //int temp = head.x - 1;
+        --head.x;
+        if (head.x > -1 && !snake.IsSnakeBody(head))
+        {
+            snake.MoveLeft(food.x, food.y);
+            //snake.MoveLeft(food.x, food.y);
+            //Koordinates head = snake.GetHead();
+            if (snake.EatingFood(food.x, food.y))
+            {
+                GenerateFood();
+            }
+        }
+        else
+        {
+            ++head.x;
+            GameOver(quit);
         }
     }
 
     void Restart()
     {
-        field[SnakePosY][SnakePosX] = FieldStatus::Empty;
-        field[FoodPosY][FoodPosX] = FieldStatus::Empty;
-        SnakePosX = 1;
-        SnakePosY = 1;
-        field[SnakePosY][SnakePosX] = FieldStatus::Snake;
+        snake.Restart();
+        head = snake.GetHead();
         GenerateFood();
     }
 
     void PrintOut()
     {
+        std::vector<std::vector<FieldStatus>> field (height, std::vector<FieldStatus>(width, FieldStatus::Empty));
+        snake.FillField(field);
+        field[food.y][food.x] = FieldStatus::Food;
         std::string print;
         bool IsFoodOnField = false;
         print.append(Term::cursor_move(1, 1));
-        for (int i = 0; i < field.size(); ++i)
+        for (int i = 0; i < height; ++i)
         {
-            for (int j = 0; j < field[i].size(); ++j)
+            for (int j = 0; j < width; ++j)
             {
                 if (field[i][j] == FieldStatus::Empty)
                 {
@@ -251,7 +293,15 @@ public:
                 else if (field[i][j] == FieldStatus::Snake)
                 {
                     //Term::cout << Term::color_bg(Term::Color::Name::Green) << "  ";
-                    print.append(Term::color_bg(Term::Color::Name::Green) + "  ");
+                    //print.append(Term::color_bg(Term::Color::Name::Green) + "  ");
+                    if ((i % 2 == 0 && j % 2 == 0) || (i % 2 == 1 && j % 2 == 1))
+                    {
+                        print.append(Term::color_bg(0, 255, 0) + "  ");
+                    }
+                    else
+                    {
+                        print.append(Term::color_bg(0, 127, 0) + "  ");
+                    }
                 }
                 else if (field[i][j] == FieldStatus::Food)
                 {
@@ -293,7 +343,7 @@ int main()
         {
             //field.PrintOut();
             const auto event = Term::Platform::read_raw();
-            std::this_thread::sleep_for(std::chrono::milliseconds(300));
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
             if (!event.empty())
             {
                 Term::Key key(event);
@@ -301,36 +351,54 @@ int main()
                 {
                     field.GameOver(quit);
                 }
+                else if (key == Term::Key::r || key == Term::Key::R)
+                {
+                    field.Restart();
+                    move = Moving::Empty;
+                    Term::cout << Term::clear_screen() << std::flush;
+                }
                 else if (key == Term::Key::ArrowDown)
                 {
-                    move = snake.MoveDown();
+                    if (move != Moving::Up)
+                    {
+                        move = Moving::Down;
+                    }
                 }
                 else if (key == Term::Key::ArrowUp)
                 {
-                    move = snake.MoveUp();
+                    if (move != Moving::Down)
+                    {
+                        move = Moving::Up;
+                    }
                 }
                 else if (key == Term::Key::ArrowRight)
                 {
-                    move = snake.MoveRight();
+                    if (move != Moving::Left)
+                    {
+                        move = Moving::Right;
+                    }
                 }
                 else if (key == Term::Key::ArrowLeft)
                 {
-                    move = snake.MoveLeft();
+                    if (move != Moving::Right)
+                    {
+                        move = Moving::Left;
+                    }
                 }
             }
             switch (move)
             {
             case Moving::Left:
-                field.MoveLeft(quit, snake);
+                field.MoveLeft(quit);
                 break;
             case Moving::Right:
-                field.MoveRight(quit, snake);
+                field.MoveRight(quit);
                 break;
             case Moving::Up:
-                field.MoveUp(quit, snake);
+                field.MoveUp(quit);
                 break;
             case Moving::Down:
-                field.MoveDown(quit, snake);
+                field.MoveDown(quit);
                 break;
             case Moving::Empty:
                 break;
