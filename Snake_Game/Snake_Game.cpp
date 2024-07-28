@@ -31,6 +31,12 @@ enum class Moving
     Empty
 };
 
+enum class State
+{
+    Game,
+    Quit
+};
+
 struct Koordinates
 {
     int x;
@@ -148,25 +154,23 @@ private:
     //std::vector<std::vector<FieldStatus>> field;
     int width;
     int height;
-    Koordinates head;
-    Snake snake;
     Koordinates food;
+    Snake snake;
 public:
     Field(int width_, int height_)
         //:field(height_, std::vector<FieldStatus>(width_, FieldStatus::Empty))
         :width(width_)
         ,height(height_)
-        ,head({1,1})
         , food({1,1})
     {
         //field[SnakePosY][SnakePosX] = FieldStatus::Snake;
     }
 
-    void GameOver(int& quit)
+    void GameOver(State& state)
     {
         Term::cout << Term::clear_screen() << std::flush;
         Term::cout << Term::cursor_move(1, 1) << "GAME OVER" << std::endl << std::endl;
-        ++quit;
+        state = State::Quit;
     }
 
     void GenerateFood()
@@ -182,11 +186,12 @@ public:
         }
     }
 
-    void MoveUp(int& quit)
+    void MoveUp(State& state)
     {
         //int temp = head.y - 1;
-        --head.y;
-        if (head.y > -1 && !snake.IsSnakeBody(head))
+        Koordinates newHead = snake.GetHead();
+        --newHead.y;
+        if (newHead.y > -1 && !snake.IsSnakeBody(newHead))
         {
             snake.MoveUp(food.x, food.y);
             //snake.MoveUp(food.x, food.y);
@@ -198,16 +203,16 @@ public:
         }
         else
         {
-            ++head.y;
-            GameOver(quit);
+            GameOver(state);
         }
     }
 
-    void MoveRight(int& quit)
+    void MoveRight(State& state)
     {
         //int temp = head.x + 1;
-        ++head.x;
-        if (head.x < width && !snake.IsSnakeBody(head))
+        Koordinates newHead = snake.GetHead();
+        ++newHead.x;
+        if (newHead.x < width && !snake.IsSnakeBody(newHead))
         {
             snake.MoveRight(food.x, food.y);
             //snake.MoveRight(food.x, food.y);
@@ -219,16 +224,16 @@ public:
         }
         else
         {
-            --head.x;
-            GameOver(quit);
+            GameOver(state);
         }
     }
 
-    void MoveDown(int& quit)
+    void MoveDown(State& state)
     {
         //int temp = head.y + 1;
-        ++head.y;
-        if (head.y < height && !snake.IsSnakeBody(head))
+        Koordinates newHead = snake.GetHead();
+        ++newHead.y;
+        if (newHead.y < height && !snake.IsSnakeBody(newHead))
         {
             snake.MoveDown(food.x, food.y);
             //snake.MoveDown(food.x, food.y);
@@ -240,16 +245,16 @@ public:
         }
         else
         {
-            --head.y;
-            GameOver(quit);
+            GameOver(state);
         }
     }
 
-    void MoveLeft(int& quit)
+    void MoveLeft(State& state)
     {
         //int temp = head.x - 1;
-        --head.x;
-        if (head.x > -1 && !snake.IsSnakeBody(head))
+        Koordinates newHead = snake.GetHead();
+        --newHead.x;
+        if (newHead.x > -1 && !snake.IsSnakeBody(newHead))
         {
             snake.MoveLeft(food.x, food.y);
             //snake.MoveLeft(food.x, food.y);
@@ -261,15 +266,13 @@ public:
         }
         else
         {
-            ++head.x;
-            GameOver(quit);
+            GameOver(state);
         }
     }
 
     void Restart()
     {
         snake.Restart();
-        head = snake.GetHead();
         GenerateFood();
     }
 
@@ -335,21 +338,20 @@ int main()
         Term::Screen screen = Term::screen_size();
         //Field field(screen.columns(), screen.rows());
         Field field(15, 15);
-        Snake snake;
         Moving move = Moving::Empty;
-        int quit = 0;
+        State state = State::Game;
         field.GenerateFood();
-        while (quit == 0)
+        while (state != State::Quit)
         {
             //field.PrintOut();
             const auto event = Term::Platform::read_raw();
-            std::this_thread::sleep_for(std::chrono::milliseconds(200));
+            std::this_thread::sleep_for(std::chrono::milliseconds(250));
             if (!event.empty())
             {
                 Term::Key key(event);
                 if (key == Term::Key::q || key == Term::Key::Q)
                 {
-                    field.GameOver(quit);
+                    field.GameOver(state);
                 }
                 else if (key == Term::Key::r || key == Term::Key::R)
                 {
@@ -389,28 +391,26 @@ int main()
             switch (move)
             {
             case Moving::Left:
-                field.MoveLeft(quit);
+                field.MoveLeft(state);
                 break;
             case Moving::Right:
-                field.MoveRight(quit);
+                field.MoveRight(state);
                 break;
             case Moving::Up:
-                field.MoveUp(quit);
+                field.MoveUp(state);
                 break;
             case Moving::Down:
-                field.MoveDown(quit);
-                break;
-            case Moving::Empty:
+                field.MoveDown(state);
                 break;
             default:
                 break;
             }
-            if (quit == 0)
+            if (state == State::Game)
             {
                 field.PrintOut();
             }
             //Term::cout << Term::clear_screen() << std::flush;
-            while (quit == 1)
+            while (state == State::Quit)
             {
                 Term::cout << "Press R to restart" << std::endl;
                 Term::cout << "Press Q to quit" << std::endl;
@@ -421,11 +421,11 @@ int main()
                     field.Restart();
                     move = Moving::Empty;
                     Term::cout << Term::clear_screen() << std::flush;
-                    --quit;
+                    state = State::Game;
                 }
                 else if (keyQuit == Term::Key::q || keyQuit == Term::Key::Q)
                 {
-                    ++quit;
+                    break;
                 }
                 else
                 {
