@@ -54,22 +54,23 @@ class Snake
 {
 private:
     std::deque<Koordinates> body;
-    int length;
-    Moving move;
-public:
-    Snake()
-        :length(1)
-        ,move(Moving::Empty)
-        , body({ {1,1} })
-    {}
 
-    void IncreasingLength(Koordinates koord)
+private:
+    void UpdateBody(const Koordinates& newHead, int foodPosX, int foodPosY)
     {
-        body.push_front(koord);
-        ++length;
+        body.push_front(newHead);
+        if (!EatingFood(foodPosX, foodPosY))
+        {
+            body.pop_back();
+        }
     }
 
-    bool EatingFood(int foodPosX, int foodPosY)
+public:
+    Snake()
+        :body({ {1,1} })
+    {}
+
+    bool EatingFood(int foodPosX, int foodPosY) const
     {
         if (body[0].x == foodPosX && body[0].y == foodPosY)
         {
@@ -78,56 +79,9 @@ public:
         return false;
     }
 
-    void MoveUp(int foodPosX, int foodPosY)
+    bool IsSnakeBody(const Koordinates& square) const
     {
-        body.push_front({ body[0].x, body[0].y - 1 });
-        if (!EatingFood(foodPosX, foodPosY))
-        {
-            body.pop_back();
-        }
-    }
-
-    void MoveDown(int foodPosX, int foodPosY)
-    {
-        body.push_front({ body[0].x, body[0].y + 1 });
-        if (!EatingFood(foodPosX, foodPosY))
-        {
-            body.pop_back();
-        }
-    }
-
-    void MoveLeft(int foodPosX, int foodPosY)
-    {
-        body.push_front({ body[0].x - 1, body[0].y});
-        if (!EatingFood(foodPosX, foodPosY))
-        {
-            body.pop_back();
-        }
-    }
-
-    void MoveRight(int foodPosX, int foodPosY)
-    {
-        body.push_front({ body[0].x + 1, body[0].y});
-        if (!EatingFood(foodPosX, foodPosY))
-        {
-            body.pop_back();
-        }
-    }
-
-    Koordinates GetHead()
-    {
-        return body[0];
-    }
-
-    void Restart()
-    {
-        body.clear();
-        body.push_front({1,1});
-    }
-
-    bool IsSnakeBody(const Koordinates& square)
-    {
-        for (std::deque<Koordinates>::iterator i = body.begin(); i != body.end(); ++i)
+        for (std::deque<Koordinates>::const_iterator i = body.cbegin(); i != body.cend(); ++i)
         {
             if (*i == square)
             {
@@ -137,7 +91,61 @@ public:
         return false;
     }
 
-    void FillField(std::vector<std::vector<FieldStatus>>& field)
+    bool MoveUp(int foodPosX, int foodPosY, int width, int height)
+    {
+        Koordinates newHead = body.front();
+        --newHead.y;
+        if (newHead.y > -1 && !IsSnakeBody(newHead))
+        {
+            UpdateBody(newHead, foodPosX, foodPosY);
+            return true;
+        }
+        return false;
+    }
+
+    bool MoveDown(int foodPosX, int foodPosY, int width, int height)
+    {
+        Koordinates newHead = body.front();
+        ++newHead.y;
+        if (newHead.y < height && !IsSnakeBody(newHead))
+        {
+            UpdateBody(newHead, foodPosX, foodPosY);
+            return true;
+        }
+        return false;
+    }
+
+    bool MoveLeft(int foodPosX, int foodPosY, int width, int height)
+    {
+        Koordinates newHead = body.front();
+        --newHead.x;
+        if (newHead.x > -1 && !IsSnakeBody(newHead))
+        {
+            UpdateBody(newHead, foodPosX, foodPosY);
+            return true;
+        }
+        return false;
+    }
+
+    bool MoveRight(int foodPosX, int foodPosY, int width, int height)
+    {
+        Koordinates newHead = body.front();
+        ++newHead.x;
+        if (newHead.x < width && !IsSnakeBody(newHead))
+        {
+            UpdateBody(newHead, foodPosX, foodPosY);
+            return true;
+        }
+        return false;
+    }
+
+    void Restart()
+    {
+        body.clear();
+        body.push_front({1,1});
+    }
+
+    void FillField(std::vector<std::vector<FieldStatus>>& field) const
     {
         for (int i = 0; i < body.size(); ++i)
         {
@@ -186,79 +194,28 @@ public:
         }
     }
 
-    void MoveUp(State& state)
+    void Move(State& state, Moving& move)
     {
-        //int temp = head.y - 1;
-        Koordinates newHead = snake.GetHead();
-        --newHead.y;
-        if (newHead.y > -1 && !snake.IsSnakeBody(newHead))
+        bool WasMoving = false;
+        switch (move)
         {
-            snake.MoveUp(food.x, food.y);
-            //snake.MoveUp(food.x, food.y);
-            //Koordinates head = snake.GetHead();
-            if (snake.EatingFood(food.x, food.y))
-            {
-                GenerateFood();
-            }
+        case Moving::Left:
+            WasMoving = snake.MoveLeft(food.x, food.y, width, height);
+            break;
+        case Moving::Right:
+            WasMoving = snake.MoveRight(food.x, food.y, width, height);
+            break;
+        case Moving::Up:
+            WasMoving = snake.MoveUp(food.x, food.y, width, height);
+            break;
+        case Moving::Down:
+            WasMoving = snake.MoveDown(food.x, food.y, width, height);
+            break;
+        default:
+            break;
         }
-        else
+        if (WasMoving)
         {
-            GameOver(state);
-        }
-    }
-
-    void MoveRight(State& state)
-    {
-        //int temp = head.x + 1;
-        Koordinates newHead = snake.GetHead();
-        ++newHead.x;
-        if (newHead.x < width && !snake.IsSnakeBody(newHead))
-        {
-            snake.MoveRight(food.x, food.y);
-            //snake.MoveRight(food.x, food.y);
-            //Koordinates head = snake.GetHead();
-            if (snake.EatingFood(food.x, food.y))
-            {
-                GenerateFood();
-            }
-        }
-        else
-        {
-            GameOver(state);
-        }
-    }
-
-    void MoveDown(State& state)
-    {
-        //int temp = head.y + 1;
-        Koordinates newHead = snake.GetHead();
-        ++newHead.y;
-        if (newHead.y < height && !snake.IsSnakeBody(newHead))
-        {
-            snake.MoveDown(food.x, food.y);
-            //snake.MoveDown(food.x, food.y);
-            //Koordinates head = snake.GetHead();
-            if (snake.EatingFood(food.x, food.y))
-            {
-                GenerateFood();
-            }
-        }
-        else
-        {
-            GameOver(state);
-        }
-    }
-
-    void MoveLeft(State& state)
-    {
-        //int temp = head.x - 1;
-        Koordinates newHead = snake.GetHead();
-        --newHead.x;
-        if (newHead.x > -1 && !snake.IsSnakeBody(newHead))
-        {
-            snake.MoveLeft(food.x, food.y);
-            //snake.MoveLeft(food.x, food.y);
-            //Koordinates head = snake.GetHead();
             if (snake.EatingFood(food.x, food.y))
             {
                 GenerateFood();
@@ -336,8 +293,8 @@ int main()
     try
     {
         Term::Screen screen = Term::screen_size();
-        //Field field(screen.columns(), screen.rows());
-        Field field(15, 15);
+        //Field field(screen.columns() - 10, screen.rows() - 10);
+        Field field(20, 20);
         Moving move = Moving::Empty;
         State state = State::Game;
         field.GenerateFood();
@@ -345,7 +302,7 @@ int main()
         {
             //field.PrintOut();
             const auto event = Term::Platform::read_raw();
-            std::this_thread::sleep_for(std::chrono::milliseconds(250));
+            std::this_thread::sleep_for(std::chrono::milliseconds(150));
             if (!event.empty())
             {
                 Term::Key key(event);
@@ -387,23 +344,11 @@ int main()
                         move = Moving::Left;
                     }
                 }
+                //field.Move(state, move);
             }
-            switch (move)
+            if (move != Moving::Empty)
             {
-            case Moving::Left:
-                field.MoveLeft(state);
-                break;
-            case Moving::Right:
-                field.MoveRight(state);
-                break;
-            case Moving::Up:
-                field.MoveUp(state);
-                break;
-            case Moving::Down:
-                field.MoveDown(state);
-                break;
-            default:
-                break;
+                field.Move(state, move);
             }
             if (state == State::Game)
             {
