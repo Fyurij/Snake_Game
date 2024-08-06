@@ -5,7 +5,13 @@ project (Snake_Game)
 add_subdirectory(3rd_Party/cpp-terminal)
 
 add_executable(Snake_Game
-Snake_Game/Snake_Game.cpp)
+Snake_Game/Snake_Game.cpp
+Snake_Game/Controller.cpp
+Snake_Game/Field.cpp
+Snake_Game/Snake.cpp
+Snake_Game/Strategy.cpp
+Snake_Game/View.cpp
+)
 
 target_link_libraries(Snake_Game cpp-terminal)
 
