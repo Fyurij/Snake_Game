@@ -1,6 +1,8 @@
 #include "Snake.h"
+#include "Strategy.h"
 
 #include <algorithm>
+#include <vector>
 
 
 
@@ -32,7 +34,7 @@ bool Snake::IsSnakeBody(const Koordinates& koordinates) const
         }
     }
     return false;*/
-    return std::any_of(body.cbegin(), body.cend() - 1, [&koordinates/*or just '&' for all arguments*/](const Koordinates& bodyPart) {return bodyPart == koordinates; });
+    return std::any_of(body.cbegin(), body.cend(), [&koordinates/*or just '&' for all arguments*/](const Koordinates& bodyPart) {return bodyPart == koordinates; });
 }
 
 bool Snake::MoveUp(int foodPosX, int foodPosY)

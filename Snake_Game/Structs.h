@@ -7,7 +7,8 @@ enum class FieldStatus
     Empty,
     Snake,
     Head,
-    Food
+    Food,
+    Obstacle
 };
 
 enum class Moving
@@ -21,16 +22,33 @@ enum class Moving
 
 enum class State
 {
+    AskName,
+    ReadSnapshot,
+    WorkWithSnapshot,
+    ChooseSnapshot,
+    HelloMessage,
+    ChooseDiff,
     Game,
+    Pause,
     Quit
+};
+
+enum class Level
+{
+    First,
+    Second,
+    Third,
+    Fourth,
+    Fifth
 };
 
 struct Koordinates
 {
     int x;
     int y;
-    friend bool operator==(const Koordinates& lhs, const Koordinates& rhs)
-    {
-        return (lhs.x == rhs.x && lhs.y == rhs.y);
-    }
 };
+
+inline bool operator==(const Koordinates& lhs, const Koordinates& rhs)
+{
+    return ((lhs.x == rhs.x) && (lhs.y == rhs.y));
+}

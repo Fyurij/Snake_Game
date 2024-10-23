@@ -18,7 +18,12 @@ private:
 
 public:
     Snake(std::unique_ptr<Strategy> strategy_)
-        :body({ {1,1} })
+        :body({{1,1}})
+        , strategy(std::move(strategy_))
+    {}
+
+    Snake(const std::deque<Koordinates>& body_, std::unique_ptr<Strategy> strategy_)
+        :body(body_)
         , strategy(std::move(strategy_))
     {}
 
@@ -30,4 +35,14 @@ public:
     bool MoveRight(int foodPosX, int foodPosY);
     void Restart();
     void FillField(std::vector<std::vector<FieldStatus>>& field) const;
+
+    std::deque<Koordinates> GetSnakeKoordinates()
+    {
+        return body;
+    }
+
+    void SetSnakeKoordinates(std::deque<Koordinates>& snake)
+    {
+        body = snake;
+    }
 };

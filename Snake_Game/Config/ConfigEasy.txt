@@ -1,0 +1,4 @@
+time 300
+strategy Endless
+food 5
+obstacles 3

@@ -1,0 +1,4 @@
+time 150
+strategy Standart
+food 5
+obstacles 7

@@ -4,3 +4,4 @@ out/
 *.sln
 Snake_Game/Debug/
 Snake_Game/*.vcxproj*
+Idea.txt
